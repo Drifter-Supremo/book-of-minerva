@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book of Minerva</title>
+    <style>
+        /* Theme variables */
+        :root {
+            /* Light theme (default) */
+            --bg-color: #f5f5f5;
+            --text-color: #333;
+            --title-color: #2c3e50;
+            --card-bg: white;
+            --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --border-color: #ddd;
+            --input-bg: white;
+            --input-border: #ddd;
+            --secondary-text: #7f8c8d;
+            --primary-btn: #3498db;
+            --primary-btn-hover: #2980b9;
+            --delete-btn: #e74c3c;
+            --delete-btn-hover: #c0392b;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --theme-toggle-icon: "🌙";
+        }
+        
+        /* Dark theme */
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #f0f0f0;
+            --title-color: #ecf0f1;
+            --card-bg: #2c3e50;
+            --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            --border-color: #34495e;
+            --input-bg: #34495e;
+            --input-border: #2c3e50;
+            --secondary-text: #bdc3c7;
+            --primary-btn: #2980b9;
+            --primary-btn-hover: #3498db;
+            --delete-btn: #c0392b;
+            --delete-btn-hover: #e74c3c;
+            --success-color: #27ae60;
+            --error-color: #c0392b;
+            --theme-toggle-icon: "☀️";
+        }
+        
+        /* Base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+        }
+        
+        h1 {
+            color: var(--title-color);
+            margin-bottom: 10px;
+        }
+        
+        h2 {
+            color: var(--title-color);
+            margin-bottom: 15px;
+        }
+        
+        /* Theme toggle button */
+        .theme-toggle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        
+        .theme-toggle::after {
+            content: var(--theme-toggle-icon);
+        }
+        
+        /* Form styles */
+        form {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            font-size: 16px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s, border 0.3s;
+        }
+        
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        button {
+            background: var(--primary-btn);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: var(--primary-btn-hover);
+        }
+        
+        /* Journal entries styles */
+        .entries-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .entry {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .entry-date {
+            color: var(--secondary-text);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .entry-title {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: var(--title-color);
+        }
+        
+        .entry-content {
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+        
+        .delete-btn {
+            background: var(--delete-btn);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background: var(--delete-btn-hover);
+        }
+        
+        .no-entries {
+            text-align: center;
+            color: var(--secondary-text);
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: var(--success-color);
+            color: white;
+            border-radius: 4px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s;
+            opacity: 0;
+            transform: translateY(-20px);
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .notification.error {
+            background: var(--error-color);
+        }
+        
+        /* Stats Dashboard styles */
+        .stats-dashboard {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 10px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            flex: 1;
+            min-width: 100px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--title-color);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--secondary-text);
+        }
+        
+        /* Action buttons styles */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            background: var(--primary-btn);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .action-btn:hover {
+            background: var(--primary-btn-hover);
+        }
+        
+        /* Search styles */
+        .search-container {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 10px 40px 10px 15px;
+            border: 1px solid var(--input-border);
+            border-radius: 20px;
+            font-size: 16px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            transition: all 0.3s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--primary-btn);
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--secondary-text);
+            cursor: pointer;
+        }
+        
+        .search-results {
+            background-color: var(--card-bg);
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            color: var(--secondary-text);
+            display: none;
+        }
+        
+        /* Import dialog */
+        .import-dialog {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        
+        .import-dialog.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .import-dialog-content {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .import-dialog h3 {
+            margin-bottom: 15px;
+            color: var(--title-color);
+        }
+        
+        .import-options {
+            margin-bottom: 20px;
+        }
+        
+        .import-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .import-option input {
+            margin-right: 10px;
+        }
+        
+        .dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        
+        .cancel-btn {
+            background-color: var(--border-color);
+        }
+        
+        /* Markdown preview toggle */
+        .markdown-toggle {
+            display: flex;
+            align-items: center;
+            margin: 5px 0 15px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .markdown-toggle input {
+            margin-right: 8px;
+            width: auto;
+        }
+        
+        .markdown-info {
+            font-size: 14px;
+            color: var(--secondary-text);
+            margin-top: 5px;
+            margin-bottom: 15px;
+        }
+        
+        .markdown-info code {
+            background-color: var(--input-bg);
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        /* Help tooltip */
+        .markdown-help {
+            margin-left: 5px;
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            background-color: var(--secondary-text);
+            color: var(--card-bg);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 16px;
+            font-size: 12px;
+        }
+        
+        .markdown-help:hover::after {
+            content: "Markdown allows formatting: **bold**, *italic*, - list items, # headings, [links](url)";
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 100%;
+            width: 200px;
+            padding: 8px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border-radius: 4px;
+            font-size: 12px;
+            box-shadow: var(--card-shadow);
+            z-index: 10;
+            margin-bottom: 5px;
+        }
+        
+        /* Entry highlight for search */
+        .highlight-match {
+            background-color: rgba(255, 255, 0, 0.3);
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            form, .entry {
+                padding: 15px;
+            }
+            
+            .notification {
+                right: 10px;
+                left: 10px;
+                text-align: center;
+            }
+            
+            .theme-toggle {
+                top: 10px;
+                right: 10px;
+            }
+            
+            .stat-item {
+                min-width: 80px;
+            }
+            
+            .action-buttons {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <button id="theme-toggle" class="theme-toggle" title="Toggle dark/light mode"></button>
+        <h1>Book of Minerva</h1>
+        <p>Connect your mind to the universe</p>
+    </header>
+    
+    <form id="journal-form">
+        <div>
+            <label for="entry-title">Title</label>
+            <input type="text" id="entry-title" placeholder="Enter a title for your entry" maxlength="100" required>
+        </div>
+        
+        <div>
+            <label for="entry-content">Your thoughts</label>
+            <textarea id="entry-content" placeholder="What's on your mind today?" maxlength="5000" required></textarea>
+            
+            <label class="markdown-toggle">
+                <input type="checkbox" id="markdown-enabled" checked>
+                Enable Markdown formatting <span class="markdown-help">?</span>
+            </label>
+            
+            <div class="markdown-info">
+                Use <code>**bold**</code>, <code>*italic*</code>, <code># heading</code>, and more for formatting.
+            </div>
+        </div>
+        
+        <button type="submit">Save Entry</button>
+    </form>
+    
+    <!-- Stats Dashboard -->
+    <div class="stats-dashboard" id="stats-dashboard">
+        <div class="stat-item">
+            <div class="stat-value" id="total-entries">0</div>
+            <div class="stat-label">Entries</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="total-words">0</div>
+            <div class="stat-label">Words</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="avg-words">0</div>
+            <div class="stat-label">Avg Words</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="writing-days">0</div>
+            <div class="stat-label">Days</div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <button class="action-btn" id="export-btn">📤 Export Entries</button>
+        <button class="action-btn" id="import-btn">📥 Import Entries</button>
+        <button class="action-btn" id="clear-search-btn" style="display: none;">❌ Clear Search</button>
+    </div>
+    
+    <!-- Search Box -->
+    <div class="search-container">
+        <input type="text" id="search-input" class="search-input" placeholder="Search your entries...">
+        <span class="search-icon">🔍</span>
+    </div>
+    <div id="search-results" class="search-results"></div>
+    
+    <h2>Your Journal Entries</h2>
+    <div id="entries-container" class="entries-container">
+        <!-- Journal entries will be added here by JavaScript -->
+    </div>
+    
+    <!-- Import Dialog -->
+    <div id="import-dialog" class="import-dialog">
+        <div class="import-dialog-content">
+            <h3>Import Entries</h3>
+            <div class="import-options">
+                <div class="import-option">
+                    <input type="radio" id="merge-entries" name="import-type" value="merge" checked>
+                    <label for="merge-entries">Merge with existing entries</label>
+                </div>
+                <div class="import-option">
+                    <input type="radio" id="replace-entries" name="import-type" value="replace">
+                    <label for="replace-entries">Replace all existing entries</label>
+                </div>
+                <input type="file" id="import-file" accept=".json">
+            </div>
+            <div class="dialog-buttons">
+                <button class="action-btn cancel-btn" id="cancel-import">Cancel</button>
+                <button class="action-btn" id="confirm-import">Import</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification element -->
+    <div id="notification" class="notification"></div>
+    
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.18/marked.min.js"></script>
+    
+    <script>
+        // DOM Elements
+        const journalForm = document.getElementById('journal-form');
+        const entryTitleInput = document.getElementById('entry-title');
+        const entryContentInput = document.getElementById('entry-content');
+        const entriesContainer = document.getElementById('entries-container');
+        const notification = document.getElementById('notification');
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+        const exportBtn = document.getElementById('export-btn');
+        const importBtn = document.getElementById('import-btn');
+        const clearSearchBtn = document.getElementById('clear-search-btn');
+        const importDialog = document.getElementById('import-dialog');
+        const confirmImportBtn = document.getElementById('confirm-import');
+        const cancelImportBtn = document.getElementById('cancel-import');
+        const markdownEnabled = document.getElementById('markdown-enabled');
+        
+        // Stats elements
+        const totalEntriesEl = document.getElementById('total-entries');
+        const totalWordsEl = document.getElementById('total-words');
+        const avgWordsEl = document.getElementById('avg-words');
+        const writingDaysEl = document.getElementById('writing-days');
+        
+        // Journal entries array
+        let journalEntries = [];
+        let isSearchActive = false;
+        let markedLoaded = typeof marked !== 'undefined';
+        
+        // Initialize the app
+        function initializeApp() {
+            // Load theme preference
+            loadThemePreference();
+            // Load entries from localStorage
+            loadEntries();
+            // Display entries
+            displayEntries();
+            // Update stats
+            updateStats();
+            // Add event listeners
+            addEventListeners();
+        }
+        
+        // Add all event listeners
+        function addEventListeners() {
+            journalForm.addEventListener('submit', addEntry);
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+            searchInput.addEventListener('input', performSearch);
+            clearSearchBtn.addEventListener('click', clearSearch);
+            exportBtn.addEventListener('click', exportEntries);
+            importBtn.addEventListener('click', showImportDialog);
+            confirmImportBtn.addEventListener('click', importEntries);
+            cancelImportBtn.addEventListener('click', hideImportDialog);
+        }
+        
+        // Load entries from localStorage
+        function loadEntries() {
+            try {
+                const storedEntries = localStorage.getItem('journalEntries');
+                if (storedEntries) {
+                    journalEntries = JSON.parse(storedEntries);
+                }
+            } catch (error) {
+                showNotification('Error loading journal entries', true);
+                console.error('Error loading entries:', error);
+                journalEntries = [];
+            }
+        }
+        
+        // Save entries to localStorage
+        function saveEntries() {
+            try {
+                localStorage.setItem('journalEntries', JSON.stringify(journalEntries));
+                return true;
+            } catch (error) {
+                showNotification('Error saving journal entry', true);
+                console.error('Error saving entries:', error);
+                return false;
+            }
+        }
+        
+        // Display all entries
+        function displayEntries() {
+            // Clear the container first
+            entriesContainer.innerHTML = '';
+            
+            // Check if there are any entries
+            if (journalEntries.length === 0) {
+                entriesContainer.innerHTML = '<div class="no-entries">No entries yet. Start journaling above!</div>';
+                return;
+            }
+            
+            // Sort entries by date (newest first)
+            const sortedEntries = [...journalEntries].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Create and append entry elements
+            sortedEntries.forEach((entry) => {
+                const entryElement = document.createElement('div');
+                entryElement.className = 'entry';
+                entryElement.dataset.id = entry.id;
+                
+                // Format the date
+                const entryDate = new Date(entry.date);
+                const formattedDate = entryDate.toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                // Create entry HTML structure
+                entryElement.innerHTML = `
+                    <div class="entry-date">${formattedDate}</div>
+                    <h3 class="entry-title"></h3>
+                    <div class="entry-content"></div>
+                    <button class="delete-btn" data-id="${entry.id}">Delete</button>
+                `;
+                
+                // Set title safely
+                entryElement.querySelector('.entry-title').textContent = entry.title;
+                
+                // Set content based on markdown setting
+                const contentEl = entryElement.querySelector('.entry-content');
+                if (entry.markdown !== false && markedLoaded) {
+                    try {
+                        contentEl.innerHTML = marked.parse(entry.content);
+                    } catch (e) {
+                        contentEl.textContent = entry.content;
+                        console.error('Error parsing markdown:', e);
+                    }
+                } else {
+                    contentEl.textContent = entry.content;
+                }
+                
+                // Add delete event listener
+                entryElement.querySelector('.delete-btn').addEventListener('click', function() {
+                    deleteEntry(entry.id);
+                });
+                
+                // Append to container
+                entriesContainer.appendChild(entryElement);
+            });
+        }
+        
+        // Add a new entry
+        function addEntry(e) {
+            e.preventDefault();
+            
+            // Get values from form
+            const title = entryTitleInput.value.trim();
+            const content = entryContentInput.value.trim();
+            const useMarkdown = markdownEnabled.checked;
+            
+            // Validate inputs
+            if (!title) {
+                showNotification('Please enter a title for your entry', true);
+                entryTitleInput.focus();
+                return;
+            }
+            
+            if (!content) {
+                showNotification('Please enter some content for your entry', true);
+                entryContentInput.focus();
+                return;
+            }
+            
+            // Create new entry object
+            const newEntry = {
+                id: Date.now(), // Use timestamp as unique ID
+                title: title,
+                content: content,
+                date: new Date().toISOString(),
+                markdown: useMarkdown
+            };
+            
+            // Add to array
+            journalEntries.push(newEntry);
+            
+            // Save to localStorage
+            if (saveEntries()) {
+                // Show success notification
+                showNotification('Journal entry saved successfully');
+                
+                // Clear form
+                journalForm.reset();
+                markdownEnabled.checked = true;
+                
+                // Display entries and update stats
+                displayEntries();
+                updateStats();
+                
+                // Clear any active search
+                if (isSearchActive) {
+                    clearSearch();
+                }
+            }
+        }
+        
+        // Delete an entry
+        function deleteEntry(id) {
+            // Confirm deletion
+            if (confirm('Are you sure you want to delete this entry?')) {
+                // Filter out the entry with the given ID
+                journalEntries = journalEntries.filter(entry => entry.id !== id);
+                
+                // Save to localStorage
+                if (saveEntries()) {
+                    // Show success notification
+                    showNotification('Journal entry deleted');
+                    
+                    // Display entries and update stats
+                    if (isSearchActive) {
+                        performSearch(); // Refresh search results
+                    } else {
+                        displayEntries();
+                    }
+                    updateStats();
+                }
+            }
+        }
+        
+        // Search functionality
+        function performSearch() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            
+            if (!searchTerm) {
+                clearSearch();
+                return;
+            }
+            
+            isSearchActive = true;
+            clearSearchBtn.style.display = 'block';
+            
+            // Filter entries that match the search term
+            const matchingEntries = journalEntries.filter(entry => 
+                entry.title.toLowerCase().includes(searchTerm) || 
+                entry.content.toLowerCase().includes(searchTerm)
+            );
+            
+            // Update search results count
+            searchResults.style.display = 'block';
+            searchResults.textContent = `Found ${matchingEntries.length} ${matchingEntries.length === 1 ? 'entry' : 'entries'} matching "${searchTerm}"`;
+            
+            // Clear container
+            entriesContainer.innerHTML = '';
+            
+            if (matchingEntries.length === 0) {
+                entriesContainer.innerHTML = '<div class="no-entries">No entries match your search.</div>';
+                return;
+            }
+            
+            // Sort by date (newest first)
+            const sortedEntries = [...matchingEntries].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Create and append entry elements with highlighted search term
+            sortedEntries.forEach((entry) => {
+                const entryElement = document.createElement('div');
+                entryElement.className = 'entry';
+                
+                // Format the date
+                const entryDate = new Date(entry.date);
+                const formattedDate = entryDate.toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                // Create basic structure
+                entryElement.innerHTML = `
+                    <div class="entry-date">${formattedDate}</div>
+                    <h3 class="entry-title"></h3>
+                    <div class="entry-content"></div>
+                    <button class="delete-btn" data-id="${entry.id}">Delete</button>
+                `;
+                
+                // Add title with highlighting
+                const titleEl = entryElement.querySelector('.entry-title');
+                if (entry.title.toLowerCase().includes(searchTerm)) {
+                    titleEl.innerHTML = highlightText(entry.title, searchTerm);
+                } else {
+                    titleEl.textContent = entry.title;
+                }
+                
+                // Add content with highlighting
+                const contentEl = entryElement.querySelector('.entry-content');
+                
+                if (entry.markdown !== false && markedLoaded) {
+                    try {
+                        // For markdown, highlight after rendering
+                        let htmlContent = marked.parse(entry.content);
+                        if (entry.content.toLowerCase().includes(searchTerm)) {
+                            htmlContent = highlightHTMLContent(htmlContent, searchTerm);
+                        }
+                        contentEl.innerHTML = htmlContent;
+                    } catch (e) {
+                        contentEl.textContent = entry.content;
+                    }
+                } else {
+                    // For plain text, use direct highlighting
+                    if (entry.content.toLowerCase().includes(searchTerm)) {
+                        contentEl.innerHTML = highlightText(entry.content, searchTerm);
+                    } else {
+                        contentEl.textContent = entry.content;
+                    }
+                }
+                
+                // Add delete event listener
+                entryElement.querySelector('.delete-btn').addEventListener('click', function() {
+                    deleteEntry(entry.id);
+                });
+                
+                // Append to container
+                entriesContainer.appendChild(entryElement);
+            });
+        }
+        
+        // Clear search
+        function clearSearch() {
+            searchInput.value = '';
+            searchResults.style.display = 'none';
+            clearSearchBtn.style.display = 'none';
+            isSearchActive = false;
+            displayEntries();
+        }
+        
+        // Highlight search term in text
+        function highlightText(text, searchTerm) {
+            const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+            return text.replace(regex, '<span class="highlight-match">$1</span>');
+        }
+        
+        // Highlight search term in HTML content (more complex)
+        function highlightHTMLContent(html, searchTerm) {
+            // Create a temporary element to work with the HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            
+            // Highlight text in all text nodes
+            highlightTextNodes(tempDiv, searchTerm);
+            
+            return tempDiv.innerHTML;
+        }
+        
+        // Recursively highlight text in nodes
+        function highlightTextNodes(node, searchTerm) {
+            if (node.nodeType === 3) { // Text node
+                const content = node.nodeValue;
+                const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+                
+                if (regex.test(content)) {
+                    const span = document.createElement('span');
+                    span.innerHTML = content.replace(regex, '<span class="highlight-match">$1</span>');
+                    if (node.parentNode) {
+                        node.parentNode.replaceChild(span, node);
+                    }
+                }
+            } else if (node.nodeType === 1) { // Element node
+                // Skip script and style elements
+                if (node.tagName !== 'SCRIPT' && node.tagName !== 'STYLE') {
+                    Array.from(node.childNodes).forEach(child => {
+                        highlightTextNodes(child, searchTerm);
+                    });
+                }
+            }
+        }
+        
+        // Escape special characters for use in regex
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        // Update statistics
+        function updateStats() {
+            if (journalEntries.length === 0) {
+                totalEntriesEl.textContent = '0';
+                totalWordsEl.textContent = '0';
+                avgWordsEl.textContent = '0';
+                writingDaysEl.textContent = '0';
+                return;
+            }
+            
+            // Calculate total entries
+            totalEntriesEl.textContent = journalEntries.length;
+            
+            // Calculate total words
+            const totalWords = journalEntries.reduce((sum, entry) => {
+                return sum + countWords(entry.content);
+            }, 0);
+            totalWordsEl.textContent = totalWords;
+            
+            // Calculate average words per entry
+            const avgWords = Math.round(totalWords / journalEntries.length);
+            avgWordsEl.textContent = avgWords;
+            
+            // Calculate unique writing days
+            const uniqueDays = new Set();
+            journalEntries.forEach(entry => {
+                const date = new Date(entry.date);
+                uniqueDays.add(`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`);
+            });
+            writingDaysEl.textContent = uniqueDays.size;
+        }
+        
+        // Count words in text
+        function countWords(text) {
+            return text.trim().split(/\s+/).length;
+        }
+        
+        // Export entries to JSON file
+        function exportEntries() {
+            if (journalEntries.length === 0) {
+                showNotification('No entries to export', true);
+                return;
+            }
+            
+            try {
+                // Create export object with metadata
+                const exportData = {
+                    version: 1,
+                    timestamp: new Date().toISOString(),
+                    source: 'Book of Minerva',
+                    entries: journalEntries
+                };
+                
+                // Convert to JSON string
+                const jsonData = JSON.stringify(exportData, null, 2);
+                
+                // Create download link
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                // Format date for filename
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+                
+                // Create temporary link and trigger download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `minerva-journal-${dateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                
+                // Clean up
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showNotification('Journal exported successfully');
+                }, 100);
+            } catch (error) {
+                console.error('Error exporting entries:', error);
+                showNotification('Error exporting journal', true);
+            }
+        }
+        
+        // Show import dialog
+        function showImportDialog() {
+            importDialog.classList.add('show');
+        }
+        
+        // Hide import dialog
+        function hideImportDialog() {
+            importDialog.classList.remove('show');
+            document.getElementById('import-file').value = '';
+        }
+        
+        // Import entries from JSON file
+        function importEntries() {
+            const fileInput = document.getElementById('import-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showNotification('Please select a file to import', true);
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const importData = JSON.parse(e.target.result);
+                    
+                    // Basic validation
+                    if (!importData.entries || !Array.isArray(importData.entries)) {
+                        throw new Error('Invalid file format');
+                    }
+                    
+                    // Get import type (merge or replace)
+                    const importType = document.querySelector('input[name="import-type"]:checked').value;
+                    
+                    if (importType === 'replace') {
+                        // Replace all entries
+                        journalEntries = [...importData.entries];
+                    } else {
+                        // Merge with existing entries
+                        const existingIds = new Set(journalEntries.map(entry => entry.id));
+                        
+                        // Add only entries with unique IDs
+                        importData.entries.forEach(entry => {
+                            if (!existingIds.has(entry.id)) {
+                                journalEntries.push(entry);
+                            }
+                        });
+                    }
+                    
+                    // Save to localStorage
+                    if (saveEntries()) {
+                        showNotification(`Successfully imported ${importData.entries.length} entries`);
+                        displayEntries();
+                        updateStats();
+                        hideImportDialog();
+                    }
+                } catch (error) {
+                    console.error('Error importing entries:', error);
+                    showNotification('Error importing file: Invalid format', true);
+                }
+            };
+            
+            reader.onerror = function() {
+                showNotification('Error reading file', true);
+            };
+            
+            reader.readAsText(file);
+        }
+        
+        // Show notification
+        function showNotification(message, isError = false) {
+            // Set notification message and class
+            notification.textContent = message;
+            notification.className = 'notification';
+            
+            if (isError) {
+                notification.classList.add('error');
+            }
+            
+            // Show notification
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+            
+            // Hide notification after 3 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Theme management
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            
+            // Save theme preference to localStorage if available
+            if (isLocalStorageAvailable()) {
+                localStorage.setItem('journalTheme', newTheme);
+            }
+            
+            showNotification(`${newTheme.charAt(0).toUpperCase() + newTheme.slice(1)} mode enabled`);
+        }
+        
+        // Load theme preference from localStorage
+        function loadThemePreference() {
+            try {
+                const savedTheme = localStorage.getItem('journalTheme');
+                if (savedTheme) {
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    // If no saved preference, use system preference
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } catch (error) {
+                console.error('Error loading theme preference:', error);
+            }
+        }
+        
+        // Check if localStorage is available
+        function isLocalStorageAvailable() {
+            try {
+                const test = 'test';
+                localStorage.setItem(test, test);
+                localStorage.removeItem(test);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+        
+        // Initialize the app when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // If marked.js is available, configure it
+            if (markedLoaded) {
+                marked.setOptions({
+                    gfm: true,        // GitHub flavored markdown
+                    breaks: true,      // Convert line breaks to <br>
+                    smartLists: true,  // Better list handling
+                    smartypants: true  // Smart typographic punctuation
+                });
+            } else {
+                console.warn("Markdown support unavailable");
+            }
+            
+            // Add a localStorage status indicator
+            const storageAvailable = isLocalStorageAvailable();
+            
+            if (!storageAvailable) {
+                const storageWarning = document.createElement('div');
+                storageWarning.style.backgroundColor = '#ffcc00';
+                storageWarning.style.color = '#333';
+                storageWarning.style.padding = '10px';
+                storageWarning.style.marginBottom = '20px';
+                storageWarning.style.borderRadius = '4px';
+                storageWarning.style.textAlign = 'center';
+                storageWarning.innerHTML = '⚠️ <strong>Storage Unavailable</strong>: Entries and settings will not be saved between sessions. This may be due to private browsing or a preview environment.';
+                
+                // Insert after header
+                const header = document.querySelector('header');
+                header.parentNode.insertBefore(storageWarning, header.nextSibling);
+                
+                // Still initialize app without localStorage
+                journalEntries = [];
+                displayEntries();
+                addEventListeners();
+                
+                // Load system theme preference
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            } else {
+                initializeApp();
+            }
+        });
+    </script>
+</body>
+</html>
