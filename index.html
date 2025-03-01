@@ -6,6 +6,9 @@
             }
             
             try {
+                // Force PIN creation for first-time setup (remove this line after first use)
+                localStorage.removeItem('journalPin');
+                
                 // Check if PIN has been set
                 const hashedPin = localStorage.getItem('journalPin');
                 
