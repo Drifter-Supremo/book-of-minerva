@@ -1,4 +1,215 @@
-<!DOCTYPE html>
+        // PIN related functions
+        function checkPinProtection() {
+            if (!cryptoJSLoaded) {
+                console.warn("Encryption library not available");
+                return false;
+            }
+            
+            try {
+                // Check if PIN has been set
+                const hashedPin = localStorage.getItem('journalPin');
+                
+                if (hashedPin) {
+                    // PIN is set, show entry screen
+                    pinSet = true;
+                    setupPinEntry();
+                    return true;
+                } else {
+                    // PIN not set, check if we have entries already
+                    const hasEntries = localStorage.getItem('journalEntries');
+                    
+                    if (hasEntries) {
+                        // Have existing entries, prompt to set PIN
+                        pinSet = false;
+                        setupPinCreation();
+                        return true;
+                    } else {
+                        // New journal, no entries, ask to set PIN
+                        pinSet = false;
+                        setupPinCreation();
+                        return true;
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking PIN protection:', error);
+                return false;
+            }
+        }
+        
+        // Set up PIN creation screen
+        function setupPinCreation() {
+            pinTitle.textContent = 'Create a PIN';
+            pinSetupText.style.display = 'block';
+            pinButton.textContent = 'Set PIN';
+            
+            pinOverlay.style.display = 'flex';
+            
+            // Add event listeners
+            pinInput.addEventListener('input', validatePinInput);
+            pinButton.addEventListener('click', createPin);
+            pinInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    createPin();
+                }
+            });
+            
+            // Focus the input
+            setTimeout(() => pinInput.focus(), 100);
+        }
+        
+        // Set up PIN entry screen
+        function setupPinEntry() {
+            pinTitle.textContent = 'Enter PIN';
+            pinSetupText.style.display = 'none';
+            pinButton.textContent = 'Unlock';
+            
+            pinOverlay.style.display = 'flex';
+            
+            // Add event listeners
+            pinInput.addEventListener('input', validatePinInput);
+            pinButton.addEventListener('click', verifyPin);
+            pinInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    verifyPin();
+                }
+            });
+            
+            // Focus the input
+            setTimeout(() => pinInput.focus(), 100);
+        }
+        
+        // Validate PIN input (numbers only, max 4 digits)
+        function validatePinInput() {
+            const value = pinInput.value;
+            
+            // Remove non-numeric characters
+            const numericValue = value.replace(/[^0-9]/g, '');
+            
+            // Update if changed
+            if (value !== numericValue) {
+                pinInput.value = numericValue;
+            }
+        }
+        
+        // Create a new PIN
+        function createPin() {
+            const pin = pinInput.value;
+            
+            if (pin.length !== 4) {
+                pinMessage.textContent = 'PIN must be 4 digits';
+                return;
+            }
+            
+            try {
+                // Hash the PIN for storage
+                const hashedPin = CryptoJS.SHA256(pin).toString();
+                localStorage.setItem('journalPin', hashedPin);
+                
+                // If we have existing entries, we need to encrypt them
+                const existingEntries = localStorage.getItem('journalEntries');
+                if (existingEntries) {
+                    try {
+                        const entries = JSON.parse(existingEntries);
+                        // Store the current entries
+                        journalEntries = entries;
+                        // Encrypt and save them
+                        saveEntries(pin);
+                    } catch (e) {
+                        console.error('Error encrypting existing entries:', e);
+                    }
+                }
+                
+                // Store the current PIN in memory
+                currentPin = pin;
+                
+                // Hide the PIN overlay
+                pinOverlay.style.display = 'none';
+                
+                // Show success notification
+                showNotification('PIN protection enabled');
+                
+                // Continue with app initialization
+                loadThemePreference();
+                loadEntries(pin);
+                displayEntries();
+                updateStats();
+                addEventListeners();
+                
+            } catch (error) {
+                console.error('Error creating PIN:', error);
+                pinMessage.textContent = 'Error creating PIN';
+            }
+        }
+        
+        // Verify an entered PIN
+        function verifyPin() {
+            const pin = pinInput.value;
+            
+            if (pin.length !== 4) {
+                pinMessage.textContent = 'PIN must be 4 digits';
+                return;
+            }
+            
+            try {
+                // Get stored hashed PIN
+                const storedHashedPin = localStorage.getItem('journalPin');
+                
+                // Hash entered PIN
+                const hashedEnteredPin = CryptoJS.SHA256(pin).toString();
+                
+                // Compare
+                if (hashedEnteredPin === storedHashedPin) {
+                    // Store the current PIN in memory
+                    currentPin = pin;
+                    
+                    // Hide the PIN overlay
+                    pinOverlay.style.display = 'none';
+                    
+                    // Continue with app initialization
+                    loadThemePreference();
+                    loadEntries(pin);
+                    displayEntries();
+                    updateStats();
+                    addEventListeners();
+                    
+                    // Show success notification
+                    showNotification('Journal unlocked');
+                } else {
+                    pinMessage.textContent = 'Incorrect PIN';
+                    pinInput.value = '';
+                    setTimeout(() => pinInput.focus(), 100);
+                }
+                
+            } catch (error) {
+                console.error('Error verifying PIN:', error);
+                pinMessage.textContent = 'Error verifying PIN';
+            }
+        }
+        
+        // Encrypt a string using PIN
+        function encryptWithPin(text, pin) {
+            if (!cryptoJSLoaded) return text;
+            return CryptoJS.AES.encrypt(text, pin).toString();
+        }
+        
+        // Decrypt a string using PIN
+        function decryptWithPin(encryptedText, pin) {
+            if (!cryptoJSLoaded) return encryptedText;
+            
+            try {
+                const bytes = CryptoJS.AES.decrypt(encryptedText, pin);
+                return bytes.toString(CryptoJS.enc.Utf8);
+            } catch (e) {
+                console.error('Decryption error:', e);
+                return null;
+            }
+        }        // DOM Elements (PIN related)
+        const pinOverlay = document.getElementById('pin-overlay');
+        const pinInput = document.getElementById('pin-input');
+        const pinButton = document.getElementById('pin-button');
+        const pinMessage = document.getElementById('pin-message');
+        const pinTitle = document.getElementById('pin-title');
+        const pinSetupText = document.getElementById('pin-setup-text');<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -461,34 +672,83 @@
             border-radius: 2px;
         }
         
-        /* Responsive design */
-        @media (max-width: 600px) {
-            body {
-                padding: 10px;
-            }
-            
-            form, .entry {
-                padding: 15px;
-            }
-            
-            .notification {
-                right: 10px;
-                left: 10px;
-                text-align: center;
-            }
-            
-            .theme-toggle {
-                top: 10px;
-                right: 10px;
-            }
-            
-            .stat-item {
-                min-width: 80px;
-            }
-            
-            .action-buttons {
-                justify-content: center;
-            }
+    /* PIN protection styles */
+        .pin-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            transition: background-color 0.3s;
+        }
+        
+        .pin-container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            width: 90%;
+            max-width: 350px;
+            text-align: center;
+        }
+        
+        .pin-title {
+            color: var(--title-color);
+            margin-bottom: 20px;
+        }
+        
+        .pin-input {
+            font-size: 24px;
+            letter-spacing: 8px;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            width: 150px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+        }
+        
+        .pin-message {
+            margin-bottom: 20px;
+            color: var(--error-color);
+            min-height: 20px;
+        }
+        
+        .pin-button {
+            background-color: var(--primary-btn);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        
+        .pin-button:hover {
+            background-color: var(--primary-btn-hover);
+        }
+        
+        .pin-setup-text {
+            margin-bottom: 20px;
+            color: var(--secondary-text);
+        }
+        
+        .pin-tip {
+            font-size: 14px;
+            color: var(--secondary-text);
+            margin-top: 15px;
+            font-style: italic;
         }
     </style>
 </head>
@@ -583,11 +843,17 @@
         </div>
     </div>
     
-    <!-- Notification element -->
-    <div id="notification" class="notification"></div>
-    
-    <!-- Marked.js for Markdown parsing -->
-    <script src="https://cdn.jsdelivr.net/npm/marked@4.0.18/marked.min.js"></script>
+    <!-- PIN protection overlay -->
+    <div id="pin-overlay" class="pin-overlay">
+        <div class="pin-container">
+            <h2 id="pin-title" class="pin-title">Enter PIN</h2>
+            <p id="pin-setup-text" class="pin-setup-text" style="display: none;">Create a 4-digit PIN to protect your journal.</p>
+            <input type="password" id="pin-input" class="pin-input" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
+            <div id="pin-message" class="pin-message"></div>
+            <button id="pin-button" class="pin-button">Unlock</button>
+            <p class="pin-tip">This PIN protects your journal on this device only.</p>
+        </div>
+    </div>
     
     <script>
         // DOM Elements
@@ -612,13 +878,21 @@
         const avgWordsEl = document.getElementById('avg-words');
         const writingDaysEl = document.getElementById('writing-days');
         
-        // Journal entries array
+        // Global variables
         let journalEntries = [];
         let isSearchActive = false;
         let markedLoaded = typeof marked !== 'undefined';
+        let cryptoJSLoaded = typeof CryptoJS !== 'undefined';
+        let pinSet = false;
+        let currentPin = '';
         
         // Initialize the app
         function initializeApp() {
+            // Check for PIN setup first
+            if (checkPinProtection()) {
+                return; // Don't proceed until PIN is entered
+            }
+            
             // Load theme preference
             loadThemePreference();
             // Load entries from localStorage
@@ -644,11 +918,26 @@
         }
         
         // Load entries from localStorage
-        function loadEntries() {
+        function loadEntries(pin) {
             try {
                 const storedEntries = localStorage.getItem('journalEntries');
+                
                 if (storedEntries) {
-                    journalEntries = JSON.parse(storedEntries);
+                    // If we have a PIN and encryption is available, decrypt the data
+                    if (pin && cryptoJSLoaded) {
+                        const decryptedData = decryptWithPin(storedEntries, pin);
+                        
+                        if (decryptedData) {
+                            journalEntries = JSON.parse(decryptedData);
+                        } else {
+                            // Decryption failed
+                            journalEntries = [];
+                            showNotification('Error decrypting entries', true);
+                        }
+                    } else {
+                        // No PIN or encryption not available, use data as-is
+                        journalEntries = JSON.parse(storedEntries);
+                    }
                 }
             } catch (error) {
                 showNotification('Error loading journal entries', true);
@@ -658,9 +947,21 @@
         }
         
         // Save entries to localStorage
-        function saveEntries() {
+        function saveEntries(pin) {
             try {
-                localStorage.setItem('journalEntries', JSON.stringify(journalEntries));
+                let dataToSave;
+                
+                // If we have a PIN and encryption is available, encrypt the data
+                if ((pin || currentPin) && cryptoJSLoaded) {
+                    const usePin = pin || currentPin;
+                    const jsonData = JSON.stringify(journalEntries);
+                    dataToSave = encryptWithPin(jsonData, usePin);
+                } else {
+                    // No PIN or encryption not available, save as-is
+                    dataToSave = JSON.stringify(journalEntries);
+                }
+                
+                localStorage.setItem('journalEntries', dataToSave);
                 return true;
             } catch (error) {
                 showNotification('Error saving journal entry', true);
@@ -1014,14 +1315,28 @@
                     version: 1,
                     timestamp: new Date().toISOString(),
                     source: 'Book of Minerva',
+                    encrypted: false,
                     entries: journalEntries
                 };
                 
-                // Convert to JSON string
-                const jsonData = JSON.stringify(exportData, null, 2);
+                // Ask if user wants to encrypt the export
+                const shouldEncrypt = confirm('Do you want to encrypt the exported file with your PIN? (Recommended for security)');
+                
+                let dataToExport;
+                
+                if (shouldEncrypt && currentPin && cryptoJSLoaded) {
+                    // Encrypt the entire export data
+                    exportData.encrypted = true;
+                    const jsonData = JSON.stringify(exportData.entries);
+                    exportData.entries = encryptWithPin(jsonData, currentPin);
+                    dataToExport = JSON.stringify(exportData);
+                } else {
+                    // Export unencrypted
+                    dataToExport = JSON.stringify(exportData, null, 2);
+                }
                 
                 // Create download link
-                const blob = new Blob([jsonData], { type: 'application/json' });
+                const blob = new Blob([dataToExport], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 
                 // Format date for filename
@@ -1072,11 +1387,37 @@
             
             reader.onload = function(e) {
                 try {
+                    // Parse the imported data
                     const importData = JSON.parse(e.target.result);
                     
                     // Basic validation
-                    if (!importData.entries || !Array.isArray(importData.entries)) {
+                    if (!importData.entries) {
                         throw new Error('Invalid file format');
+                    }
+                    
+                    let entriesToImport = [];
+                    
+                    // Check if the import data is encrypted
+                    if (importData.encrypted && cryptoJSLoaded) {
+                        // Need PIN to decrypt
+                        const decryptPin = prompt('This export is encrypted. Please enter the PIN used to encrypt it:');
+                        
+                        if (!decryptPin) {
+                            throw new Error('PIN required for decryption');
+                        }
+                        
+                        // Try to decrypt
+                        const decryptedData = decryptWithPin(importData.entries, decryptPin);
+                        
+                        if (!decryptedData) {
+                            throw new Error('Incorrect PIN or corrupted data');
+                        }
+                        
+                        // Parse the decrypted entries
+                        entriesToImport = JSON.parse(decryptedData);
+                    } else {
+                        // Data is not encrypted
+                        entriesToImport = importData.entries;
                     }
                     
                     // Get import type (merge or replace)
@@ -1084,13 +1425,13 @@
                     
                     if (importType === 'replace') {
                         // Replace all entries
-                        journalEntries = [...importData.entries];
+                        journalEntries = [...entriesToImport];
                     } else {
                         // Merge with existing entries
                         const existingIds = new Set(journalEntries.map(entry => entry.id));
                         
                         // Add only entries with unique IDs
-                        importData.entries.forEach(entry => {
+                        entriesToImport.forEach(entry => {
                             if (!existingIds.has(entry.id)) {
                                 journalEntries.push(entry);
                             }
@@ -1099,14 +1440,14 @@
                     
                     // Save to localStorage
                     if (saveEntries()) {
-                        showNotification(`Successfully imported ${importData.entries.length} entries`);
+                        showNotification(`Successfully imported ${entriesToImport.length} entries`);
                         displayEntries();
                         updateStats();
                         hideImportDialog();
                     }
                 } catch (error) {
                     console.error('Error importing entries:', error);
-                    showNotification('Error importing file: Invalid format', true);
+                    showNotification(`Error importing file: ${error.message}`, true);
                 }
             };
             
@@ -1221,7 +1562,27 @@
                     document.documentElement.setAttribute('data-theme', 'dark');
                 }
             } else {
-                initializeApp();
+                // Check for PIN protection or initialize app
+                if (!cryptoJSLoaded) {
+                    // No encryption available, initialize normally
+                    initializeApp();
+                    
+                    // Show warning about missing encryption
+                    const encryptionWarning = document.createElement('div');
+                    encryptionWarning.style.backgroundColor = '#ffcc00';
+                    encryptionWarning.style.color = '#333';
+                    encryptionWarning.style.padding = '10px';
+                    encryptionWarning.style.marginBottom = '20px';
+                    encryptionWarning.style.borderRadius = '4px';
+                    encryptionWarning.style.textAlign = 'center';
+                    encryptionWarning.innerHTML = '⚠️ <strong>Encryption Unavailable</strong>: PIN protection requires the encryption library which failed to load.';
+                    
+                    // Insert after header
+                    const header = document.querySelector('header');
+                    header.parentNode.insertBefore(encryptionWarning, header.nextSibling);
+                } else {
+                    initializeApp();
+                }
             }
         });
     </script>
