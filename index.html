@@ -901,15 +901,14 @@
         </div>
     </div>
     
-    <!-- PIN protection overlay -->
-    <div id="pin-overlay" class="pin-overlay">
+    <!-- Simple PIN overlay -->
+    <div id="pin-overlay" class="pin-overlay" style="display: none;">
         <div class="pin-container">
-            <h2 id="pin-title" class="pin-title">Enter PIN</h2>
-            <p id="pin-setup-text" class="pin-setup-text" style="display: none;">Create a 4-digit PIN to protect your journal.</p>
+            <h2 class="pin-title">Enter PIN</h2>
+            <p style="margin-bottom: 15px; color: var(--secondary-text);">Enter PIN: 1994</p>
             <input type="password" id="pin-input" class="pin-input" maxlength="4" inputmode="numeric" pattern="[0-9]*" autocomplete="off">
             <div id="pin-message" class="pin-message"></div>
-            <button id="pin-button" class="pin-button">Unlock</button>
-            <p class="pin-tip">This PIN protects your journal on this device only.</p>
+            <button id="pin-unlock" class="pin-button">Unlock</button>
         </div>
     </div>
     
@@ -976,26 +975,11 @@
         }
         
         // Load entries from localStorage
-        function loadEntries(pin) {
+        function loadEntries() {
             try {
                 const storedEntries = localStorage.getItem('journalEntries');
-                
                 if (storedEntries) {
-                    // If we have a PIN and encryption is available, decrypt the data
-                    if (pin && cryptoJSLoaded) {
-                        const decryptedData = decryptWithPin(storedEntries, pin);
-                        
-                        if (decryptedData) {
-                            journalEntries = JSON.parse(decryptedData);
-                        } else {
-                            // Decryption failed
-                            journalEntries = [];
-                            showNotification('Error decrypting entries', true);
-                        }
-                    } else {
-                        // No PIN or encryption not available, use data as-is
-                        journalEntries = JSON.parse(storedEntries);
-                    }
+                    journalEntries = JSON.parse(storedEntries);
                 }
             } catch (error) {
                 showNotification('Error loading journal entries', true);
@@ -1005,21 +989,9 @@
         }
         
         // Save entries to localStorage
-        function saveEntries(pin) {
+        function saveEntries() {
             try {
-                let dataToSave;
-                
-                // If we have a PIN and encryption is available, encrypt the data
-                if ((pin || currentPin) && cryptoJSLoaded) {
-                    const usePin = pin || currentPin;
-                    const jsonData = JSON.stringify(journalEntries);
-                    dataToSave = encryptWithPin(jsonData, usePin);
-                } else {
-                    // No PIN or encryption not available, save as-is
-                    dataToSave = JSON.stringify(journalEntries);
-                }
-                
-                localStorage.setItem('journalEntries', dataToSave);
+                localStorage.setItem('journalEntries', JSON.stringify(journalEntries));
                 return true;
             } catch (error) {
                 showNotification('Error saving journal entry', true);
@@ -1373,28 +1345,14 @@
                     version: 1,
                     timestamp: new Date().toISOString(),
                     source: 'Book of Minerva',
-                    encrypted: false,
                     entries: journalEntries
                 };
                 
-                // Ask if user wants to encrypt the export
-                const shouldEncrypt = confirm('Do you want to encrypt the exported file with your PIN? (Recommended for security)');
-                
-                let dataToExport;
-                
-                if (shouldEncrypt && currentPin && cryptoJSLoaded) {
-                    // Encrypt the entire export data
-                    exportData.encrypted = true;
-                    const jsonData = JSON.stringify(exportData.entries);
-                    exportData.entries = encryptWithPin(jsonData, currentPin);
-                    dataToExport = JSON.stringify(exportData);
-                } else {
-                    // Export unencrypted
-                    dataToExport = JSON.stringify(exportData, null, 2);
-                }
+                // Convert to JSON string
+                const jsonData = JSON.stringify(exportData, null, 2);
                 
                 // Create download link
-                const blob = new Blob([dataToExport], { type: 'application/json' });
+                const blob = new Blob([jsonData], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 
                 // Format date for filename
@@ -1445,7 +1403,6 @@
             
             reader.onload = function(e) {
                 try {
-                    // Parse the imported data
                     const importData = JSON.parse(e.target.result);
                     
                     // Basic validation
@@ -1453,43 +1410,18 @@
                         throw new Error('Invalid file format');
                     }
                     
-                    let entriesToImport = [];
-                    
-                    // Check if the import data is encrypted
-                    if (importData.encrypted && cryptoJSLoaded) {
-                        // Need PIN to decrypt
-                        const decryptPin = prompt('This export is encrypted. Please enter the PIN used to encrypt it:');
-                        
-                        if (!decryptPin) {
-                            throw new Error('PIN required for decryption');
-                        }
-                        
-                        // Try to decrypt
-                        const decryptedData = decryptWithPin(importData.entries, decryptPin);
-                        
-                        if (!decryptedData) {
-                            throw new Error('Incorrect PIN or corrupted data');
-                        }
-                        
-                        // Parse the decrypted entries
-                        entriesToImport = JSON.parse(decryptedData);
-                    } else {
-                        // Data is not encrypted
-                        entriesToImport = importData.entries;
-                    }
-                    
                     // Get import type (merge or replace)
                     const importType = document.querySelector('input[name="import-type"]:checked').value;
                     
                     if (importType === 'replace') {
                         // Replace all entries
-                        journalEntries = [...entriesToImport];
+                        journalEntries = [...importData.entries];
                     } else {
                         // Merge with existing entries
                         const existingIds = new Set(journalEntries.map(entry => entry.id));
                         
                         // Add only entries with unique IDs
-                        entriesToImport.forEach(entry => {
+                        importData.entries.forEach(entry => {
                             if (!existingIds.has(entry.id)) {
                                 journalEntries.push(entry);
                             }
@@ -1498,14 +1430,14 @@
                     
                     // Save to localStorage
                     if (saveEntries()) {
-                        showNotification(`Successfully imported ${entriesToImport.length} entries`);
+                        showNotification(`Successfully imported ${importData.entries.length} entries`);
                         displayEntries();
                         updateStats();
                         hideImportDialog();
                     }
                 } catch (error) {
                     console.error('Error importing entries:', error);
-                    showNotification(`Error importing file: ${error.message}`, true);
+                    showNotification('Error importing file: Invalid format', true);
                 }
             };
             
@@ -1581,6 +1513,16 @@
         
         // Initialize the app when the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', function() {
+            // Check if this is the first visit or localStorage is available
+            const firstVisit = !localStorage.getItem('minervaVisited');
+            
+            if (firstVisit) {
+                localStorage.setItem('minervaVisited', 'true');
+                
+                // For first visit, show welcome message with PIN info
+                alert('Welcome to Book of Minerva! Your journal has been PIN protected. Use 1994 to unlock.');
+            }
+            
             // If marked.js is available, configure it
             if (markedLoaded) {
                 marked.setOptions({
@@ -1604,43 +1546,17 @@
                 storageWarning.style.marginBottom = '20px';
                 storageWarning.style.borderRadius = '4px';
                 storageWarning.style.textAlign = 'center';
-                storageWarning.innerHTML = '⚠️ <strong>Storage Unavailable</strong>: Entries and settings will not be saved between sessions. This may be due to private browsing or a preview environment.';
+                storageWarning.innerHTML = '⚠️ <strong>Storage Unavailable</strong>: Entries and settings will not be saved between sessions.';
                 
                 // Insert after header
                 const header = document.querySelector('header');
                 header.parentNode.insertBefore(storageWarning, header.nextSibling);
                 
-                // Still initialize app without localStorage
-                journalEntries = [];
-                displayEntries();
-                addEventListeners();
-                
-                // Load system theme preference
-                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                }
+                // Initialize without PIN
+                initializeApp();
             } else {
-                // Check for PIN protection or initialize app
-                if (!cryptoJSLoaded) {
-                    // No encryption available, initialize normally
-                    initializeApp();
-                    
-                    // Show warning about missing encryption
-                    const encryptionWarning = document.createElement('div');
-                    encryptionWarning.style.backgroundColor = '#ffcc00';
-                    encryptionWarning.style.color = '#333';
-                    encryptionWarning.style.padding = '10px';
-                    encryptionWarning.style.marginBottom = '20px';
-                    encryptionWarning.style.borderRadius = '4px';
-                    encryptionWarning.style.textAlign = 'center';
-                    encryptionWarning.innerHTML = '⚠️ <strong>Encryption Unavailable</strong>: PIN protection requires the encryption library which failed to load.';
-                    
-                    // Insert after header
-                    const header = document.querySelector('header');
-                    header.parentNode.insertBefore(encryptionWarning, header.nextSibling);
-                } else {
-                    initializeApp();
-                }
+                // Show PIN protection
+                setupPinProtection();
             }
         });
     </script>
