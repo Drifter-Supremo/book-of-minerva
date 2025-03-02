@@ -1,4 +1,24 @@
-        // PIN related functions
+                if (hashedPin) {
+                    // PIN is set, show entry screen
+                    pinSet = true;
+                    setupPinEntry();
+                    return true;
+                } else {
+                    // PIN not set, check if we have entries already
+                    const hasEntries = localStorage.getItem('journalEntries');
+                    
+                    if (hasEntries) {
+                        // Have existing entries, prompt to set PIN
+                        pinSet = false;
+                        setupPinCreation();
+                        return true;
+                    } else {
+                        // New journal, no entries, ask to set PIN
+                        pinSet = false;
+                        setupPinCreation();
+                        return true;
+                    }
+                }        // PIN related functions
         function checkPinProtection() {
             if (!cryptoJSLoaded) {
                 console.warn("Encryption library not available");
@@ -6,11 +26,46 @@
             }
             
             try {
-                // Force PIN creation for first-time setup (remove this line after first use)
-                localStorage.removeItem('journalPin');
+                // SOLUTION: Preset PIN "1994" but still require entry
+                const hardcodedPin = "1994";
                 
-                // Check if PIN has been set
-                const hashedPin = localStorage.getItem('journalPin');
+                // Create hash for the hardcoded PIN
+                const hashedPin = CryptoJS.SHA256(hardcodedPin).toString();
+                
+                // Store it if not already stored
+                if (!localStorage.getItem('journalPin')) {
+                    localStorage.setItem('journalPin', hashedPin);
+                    
+                    // If we have existing entries, encrypt them with the hardcoded PIN
+                    const existingEntries = localStorage.getItem('journalEntries');
+                    if (existingEntries && !existingEntries.startsWith('U2F')) {
+                        try {
+                            const entries = JSON.parse(existingEntries);
+                            // Store the current entries temporarily
+                            const tempEntries = entries;
+                            // Encrypt and save them with the hardcoded PIN
+                            localStorage.setItem('journalEntries', encryptWithPin(JSON.stringify(tempEntries), hardcodedPin));
+                        } catch (e) {
+                            console.error('Error encrypting existing entries:', e);
+                        }
+                    }
+                    
+                    // Show a notification about the PIN
+                    setTimeout(() => {
+                        alert('Your journal is now PIN protected. Use 1994 to unlock.');
+                    }, 500);
+                }
+                
+                // Always show PIN entry screen
+                pinSet = true;
+                setupPinEntry();
+                return true;
+                
+            } catch (error) {
+                console.error('Error with PIN setup:', error);
+                return false;
+            }
+        }
                 
                 if (hashedPin) {
                     // PIN is set, show entry screen
